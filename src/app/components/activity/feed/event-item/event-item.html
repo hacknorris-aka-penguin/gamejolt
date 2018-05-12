@@ -19,6 +19,15 @@
 					<template v-else-if="eventItem.type === EventItem.TYPE_COMMENT_VIDEO_ADD">
 						{{ eventItem.action.title }}
 					</template>
+					<template v-else-if="eventItem.type === EventItem.TYPE_JAM_START">
+						The Jam {{ eventItem.action.name }} has started!
+					</template>
+					<template v-else-if="eventItem.type === EventItem.TYPE_JAM_END">
+						The Jam {{ eventItem.action.name }} has ended.
+					</template>
+					<template v-else-if="eventItem.type === EventItem.TYPE_JAM_VOTING_START">
+						The Jam {{ eventItem.action.name }} has begun its voting period!
+					</template>
 				</strong>
 			</router-link>
 		</div>

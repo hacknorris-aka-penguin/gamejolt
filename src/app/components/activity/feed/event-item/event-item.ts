@@ -24,6 +24,8 @@ import { CommentVideoModal } from '../../../../../lib/gj-lib-client/components/c
 import { Game } from '../../../../../lib/gj-lib-client/components/game/game.model';
 import { AppUserAvatarImg } from '../../../../../lib/gj-lib-client/components/user/user-avatar/img/img';
 import { AppPollVoting } from '../../../poll/voting/voting';
+import { User } from '../../../../../lib/gj-lib-client/components/user/user.model';
+import { Jam } from '../../../../../lib/gj-lib-client/components/jam/jam.model';
 
 const ResizeSensor = require('css-element-queries/src/ResizeSensor');
 
@@ -99,9 +101,17 @@ export class AppActivityFeedEventItem extends Vue {
 			}
 
 			return post.user;
+		} else if (this.eventItem.isJamType) {
+			return this.eventItem.from as User;
 		}
 
 		return undefined;
+	}
+
+	get jam() {
+		if (this.eventItem.isJamType) {
+			return this.eventItem.action as Jam;
+		}
 	}
 
 	get link() {
@@ -127,6 +137,10 @@ export class AppActivityFeedEventItem extends Vue {
 					postSlug: post.slug,
 				},
 			};
+		} else if (this.eventItem.isJamType) {
+			const jam = this.jam!;
+			// TODO: return correct router fragment once jams are implemented into the router
+			return jam.getUrl();
 		}
 
 		return '';

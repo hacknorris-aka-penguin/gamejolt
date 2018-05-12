@@ -9,6 +9,7 @@ import { routeLandingClient } from './client/client.route';
 import { routeLandingRedlight } from './redlight/redlight.route';
 import { routeLandingIndieaf } from './indieaf/indieaf.route';
 import { routeLandingGameApiDoc } from './game-api-doc/game-api-doc.route';
+import { routeLandingJams } from './jams/jams.route';
 
 export const routeLanding: RouteConfig = {
 	path: '',
@@ -24,5 +25,6 @@ export const routeLanding: RouteConfig = {
 		routeLandingPartners,
 		routeLandingRedlight,
 		routeLandingIndieaf,
+		routeLandingJams,
 	],
 };

@@ -1,0 +1,28 @@
+@require '~styles/variables'
+@require '~styles-lib/mixins'
+
+.-row
+	position: relative
+
+	@media $media-xs
+		img
+			margin-top: ($line-height-computed - $font-size-base)
+
+.-easy-use
+	img
+		margin-bottom: -(60px)
+
+		// @media $media-xs
+		// margin-bottom: -(60px-xs)
+		@media $media-sm
+			margin-bottom: 0
+
+.-toggle-features
+	img
+		margin-bottom: -(60px)
+
+		@media $media-md-up
+			margin-top: -160px
+
+		/* @media $media-xs
+		margin-bottom: -(60px-xs) */

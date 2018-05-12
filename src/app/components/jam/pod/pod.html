@@ -1,0 +1,52 @@
+<div class="jam-pod well fill-offset">
+	<div>
+		<b>
+			<a
+				:href="url"
+				target="_blank"
+				>
+				{{ jam.name }}
+			</a>
+		</b>
+	</div>
+
+	<br>
+	<app-fade-collapse
+		size="sm"
+		:collapse-height="70"
+		:is-open="showFullDescription"
+		@require-change="canToggleDescription = $event"
+		@expand="showFullDescription = !showFullDescription"
+		>
+		{{ jam.description }}
+	</app-fade-collapse>
+
+	<a
+		class="hidden-text-expander"
+		v-if="canToggleDescription"
+		@click="showFullDescription = !showFullDescription"
+		/>
+
+	<br>
+	<div class="small">
+		<b>
+			<translate>Organized by</translate>
+		</b>
+		<span
+			v-for="(organizer, i) of jam.organizers"
+			:key="organizer.id"
+			>
+			<template class="dot-separator" v-if="i !== 0">•</template>
+			<router-link :to="{ name: 'profile.overview', params: { username: organizer.user.username } }">
+				{{ organizer.user.display_name }}
+			</router-link>
+		</span>
+	</div>
+
+	<template v-if="!isFinished">
+		<br>
+		<app-jam-progress-bar
+			:jam="jam"
+			/>
+	</template>
+</div>

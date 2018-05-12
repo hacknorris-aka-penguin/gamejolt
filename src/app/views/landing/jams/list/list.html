@@ -1,0 +1,16 @@
+<div>
+	<section class="section">
+		<div class="container-lg">
+			<app-loading centered v-if="!routeBootstrapped" />
+			<div class="-pod-grid" v-else>
+				<div
+					class="-pod-item"
+					v-for="jam of jams"
+					:key="jam.id"
+					>
+					<app-jam-pod :jam="jam" />
+				</div>
+			</div>
+		</div>
+	</section>
+</div>

@@ -1,0 +1,74 @@
+<div class="landing-body">
+
+	<section
+		class="section"
+		v-for="(row, i) of contentRows"
+		:class="`-${row.class} ${i % 2 === 1 ? 'fill-offset' : ''}`"
+		>
+		<div class="container">
+			<div class="row -row">
+				<div
+					class="col-sm-6"
+					:class="{
+						'col-sm-push-6': i % 2 === 1,
+					}"
+					>
+					<h2 class="section-header" v-html="row.title" />
+					<hr class="underbar">
+
+					<p v-html="row.content" />
+				</div>
+				<div
+					class="col-sm-6 text-center"
+					:class="{
+						'col-sm-pull-6': i % 2 === 1,
+					}"
+					>
+					<img
+						v-if="row.imageMobile && Screen.isMobile && !(row.imageTablet && Screen.isSm)"
+						:src="row.imageMobile"
+						:alt="row.alt"
+						width="290"
+						>
+					<img
+						v-else-if="row.imageTablet && Screen.isSm"
+						:src="row.imageTablet"
+						:alt="row.alt"
+						width="290"
+						>
+					<img
+						v-else-if="row.imageDesktop && Screen.isDesktop"
+						:src="row.imageDesktop"
+						:alt="row.alt"
+						width="424"
+						>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section class="section">
+		<div class="container text-center">
+			<h1 class="section-header">Well, what are you waiting for?</h1>
+			<br>
+
+			<p>
+				<app-button
+					primary
+					href="http://jams.gamejolt.com/manage/jams/add"
+					target="_blank"
+					v-app-auth-required
+					>
+					Create a Jam
+				</app-button>
+			</p>
+
+			<p>
+				<router-link :to="{ name: 'landing.jams.list' }">
+					or browse current jams
+				</router-link>
+			</p>
+		</div>
+	</section>
+
+</div>

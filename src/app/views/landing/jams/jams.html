@@ -1,0 +1,49 @@
+<div>
+	<section class="section landing-header text-center">
+		<div class="container">
+
+			<h1>
+				<router-link :to="{ name: 'landing.jams.list' }">
+					<app-theme-svg v-if="!Screen.isXs" src="~img/game-jolt-jams-logo.svg" alt="Game Jolt Jams" width="528" />
+					<app-theme-svg v-if="Screen.isXs" src="~img/game-jolt-jams-logo.svg" alt="Game Jolt Jams" width="264" />
+				</router-link>
+			</h1>
+
+			<div class="row">
+				<div class="col-sm-10 col-md-8 col-lg-6 col-centered">
+					<p class="lead">So easy to use that you might have just started a jam without realizing it.</p>
+					<p>Got an idea for a game jam? You’re already almost done.</p>
+
+					<div class="text-center">
+						<p>
+							<app-button
+								primary
+								href="http://jams.gamejolt.com/manage/jams/add"
+								target="_blank"
+								v-app-auth-required
+								>
+								Create a Jam
+							</app-button>
+
+							<app-button
+								v-if="$route.name !== 'landing.jams.about'"
+								:to="{ name: 'landing.jams.about' }"
+								>
+								Learn More
+							</app-button>
+							<app-button
+								v-else
+								:to="{ name: 'landing.jams.list' }"
+								>
+								Browse Jams
+							</app-button>
+						</p>
+					</div>
+				</div>
+			</div>
+
+		</div>
+	</section>
+
+	<router-view />
+</div>

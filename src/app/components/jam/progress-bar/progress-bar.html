@@ -1,0 +1,21 @@
+<div class="jam-progress-bar">
+	<div class="clearfix -dates">
+		<div class="pull-left">
+			<b>{{ jam.start_date | date('mediumDate') }}</b>
+			<br>
+			<i class="small">{{ jam.start_date | date('shortTime') }}</i>
+		</div>
+		<div class="pull-right text-right">
+			<b>{{ jam.end_date | date('mediumDate') }}</b>
+			<br>
+			<span class="small">{{ jam.end_date | date('shortTime') }}</span>
+		</div>
+		<div class="-length">
+			{{ timeDuration }}
+			<!-- <span v-if="now >= (jam.voting_end_date || jam.end_date)">ran</span>
+			<span v-if="now < (jam.voting_end_date || jam.end_date)">runs</span>
+			for {{lengthHumanized}} -->
+		</div>
+	</div>
+	<app-progress-bar thin :percent="progress" />
+</div>

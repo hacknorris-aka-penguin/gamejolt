@@ -1,5 +1,5 @@
 import { Ads } from 'game-jolt-frontend-lib/components/ad/ads.service';
-import AppAdPlaywireVideo from 'game-jolt-frontend-lib/components/ad/playwire/video.vue';
+import { AppAdPlaywireVideo } from 'game-jolt-frontend-lib/components/ad/playwire/video';
 import AppAdWidget from 'game-jolt-frontend-lib/components/ad/widget/widget.vue';
 import { Screen } from 'game-jolt-frontend-lib/components/screen/screen-service';
 import AppScrollAffix from 'game-jolt-frontend-lib/components/scroll/affix/affix.vue';

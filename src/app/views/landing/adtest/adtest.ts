@@ -1,4 +1,4 @@
-import AppAdPlaywireVideo from 'game-jolt-frontend-lib/components/ad/playwire/video.vue';
+import { AppAdPlaywireVideo } from 'game-jolt-frontend-lib/components/ad/playwire/video';
 import { BaseRouteComponent } from 'game-jolt-frontend-lib/components/route/route-component';
 import AppScrollAffix from 'game-jolt-frontend-lib/components/scroll/affix/affix.vue';
 import { Component } from 'vue-property-decorator';

@@ -1,5 +1,5 @@
 import AppAdPlacement from 'game-jolt-frontend-lib/components/ad/placement/placement.vue';
-import AppAdPlaywireVideo from 'game-jolt-frontend-lib/components/ad/playwire/video.vue';
+import { AppAdPlaywireVideo } from 'game-jolt-frontend-lib/components/ad/playwire/video';
 import AppAdWidget from 'game-jolt-frontend-lib/components/ad/widget/widget.vue';
 import { Api } from 'game-jolt-frontend-lib/components/api/api.service';
 import { Environment } from 'game-jolt-frontend-lib/components/environment/environment.service';

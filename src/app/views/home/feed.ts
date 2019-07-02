@@ -1,4 +1,4 @@
-import AppAdPlaywireVideo from 'game-jolt-frontend-lib/components/ad/playwire/video.vue';
+import { AppAdPlaywireVideo } from 'game-jolt-frontend-lib/components/ad/playwire/video';
 import { AppTrackEvent } from 'game-jolt-frontend-lib/components/analytics/track-event.directive';
 import { Api } from 'game-jolt-frontend-lib/components/api/api.service';
 import { FiresidePost } from 'game-jolt-frontend-lib/components/fireside/post/post-model';

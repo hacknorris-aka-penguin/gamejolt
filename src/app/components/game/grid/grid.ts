@@ -1,5 +1,5 @@
 import { Ads } from 'game-jolt-frontend-lib/components/ad/ads.service';
-import AppAdPlaywireVideo from 'game-jolt-frontend-lib/components/ad/playwire/video.vue';
+import { AppAdPlaywireVideo } from 'game-jolt-frontend-lib/components/ad/playwire/video';
 import AppAdWidget from 'game-jolt-frontend-lib/components/ad/widget/widget.vue';
 import { AppTrackEvent } from 'game-jolt-frontend-lib/components/analytics/track-event.directive';
 import { AppCondenseWhitespace } from 'game-jolt-frontend-lib/components/condense-whitespace';

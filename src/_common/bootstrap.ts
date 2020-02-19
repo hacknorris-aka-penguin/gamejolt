@@ -1,4 +1,6 @@
+import ApolloClient from 'apollo-boost';
 import Vue from 'vue';
+import VueApollo from 'vue-apollo';
 import { VueRouter } from 'vue-router/types/router';
 import { hijackLinks } from '../utils/router';
 import { bootstrapAppTranslations } from '../utils/translations';
@@ -14,11 +16,28 @@ import { Meta } from './meta/meta-service';
 import { Payload } from './payload/payload-service';
 import { Referrer } from './referrer/referrer.service';
 import { Settings } from './settings/settings.service';
+
 /**
  * Bootstraps common services and returns a "createApp" function that our entry point can call to
  * get what it needs.
  */
 export function bootstrapCommon(appComponent: typeof Vue, store: VuexStore, router?: VueRouter) {
+	Vue.use(VueApollo);
+
+	const apolloClient = new ApolloClient({
+		// You should use an absolute URL here
+		uri: 'http://localhost:9666/',
+	});
+
+	const apolloProvider = new VueApollo({
+		defaultClient: apolloClient,
+		defaultOptions: {
+			$query: {
+				fetchPolicy: 'cache-and-network',
+			},
+		},
+	});
+
 	if (store.state.theme) {
 		store.commit('theme/setDark', Settings.get('theme-dark'));
 		store.commit('theme/setAlwaysOurs', Settings.get('theme-always-ours'));
@@ -55,6 +74,7 @@ export function bootstrapCommon(appComponent: typeof Vue, store: VuexStore, rout
 		return new Vue({
 			store,
 			router,
+			apolloProvider,
 			render: h => h(appComponent),
 		});
 	};

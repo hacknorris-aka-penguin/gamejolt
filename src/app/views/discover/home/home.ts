@@ -54,6 +54,121 @@ function mapPayload(payload: { [k: string]: any }) {
 	return ret;
 }
 
+const mediaItemFields = gql`
+	fragment mediaItemFields on MediaItem {
+		id
+		parentId
+		type
+		hash
+		filename
+		filetype
+		width
+		height
+		filesize
+		isAnimated
+		cropStartX
+		cropStartY
+		cropEndX
+		cropEndY
+		rehostedFrom
+		status
+		preferredFileType
+		avgImgColor
+		imgHasTransparency
+	}
+`;
+
+const userFields = gql`
+	fragment userFields on User {
+		id
+		type
+		username
+		name
+		displayName
+		webSite
+		url
+		slug
+		imgAvatar
+		dogtag
+		shoutsEnabled
+		friendRequestsEnabled
+		status
+		permissionLevel
+		isVerified
+		isPartner
+	}
+`;
+
+const gameFields = gql`
+	fragment gameFields on Game {
+		id
+		developer {
+			...userFields
+		}
+		title
+		slug
+		path
+		imgThumbnail
+		headerMediaItem {
+			...mediaItemFields
+		}
+		thumbnailMediaItem {
+			...mediaItemFields
+		}
+		ratingsEnabled
+		referralsEnabled
+		status
+		developmentStatus
+		canceled
+		tigrsAge
+	}
+`;
+
+const communityFields = gql`
+	fragment communityFields on Community {
+		id
+		name
+		path
+		headerId
+		header {
+			...mediaItemFields
+		}
+		thumbnailId
+		thumbnail {
+			...mediaItemFields
+		}
+		postPlaceholderText
+		gameId
+		game {
+			...gameFields
+		}
+		isRemoved
+		hash
+		isVerified
+		featuredBackgroundId
+		featuredBackground {
+			...mediaItemFields
+		}
+	}
+`;
+
+const featuredItemFields = gql`
+	fragment featuredItemFields on FeaturedItem {
+		id
+		content
+		backUrl
+		frontUrl
+		customText
+		customUrl
+		game {
+			...gameFields
+		}
+		community {
+			...communityFields
+		}
+	}
+`;
+
 @Component({
 	name: 'RouteDiscoverHome',
 	components: {
@@ -68,112 +183,17 @@ function mapPayload(payload: { [k: string]: any }) {
 		payload: {
 			query() {
 				return gql`
-					fragment mediaItemFields on MediaItem {
-						id
-						parentId
-						type
-						hash
-						filename
-						filetype
-						width
-						height
-						filesize
-						isAnimated
-						cropStartX
-						cropStartY
-						cropEndX
-						cropEndY
-						rehostedFrom
-						status
-						preferredFileType
-						avgImgColor
-						imgHasTransparency
-					}
-
-					fragment userFields on User {
-						id
-						type
-						username
-						name
-						displayName
-						webSite
-						url
-						slug
-						imgAvatar
-						dogtag
-						shoutsEnabled
-						friendRequestsEnabled
-						status
-						permissionLevel
-						isVerified
-						isPartner
-					}
-
-					fragment gameFields on Game {
-						id
-						developer {
-							...userFields
-						}
-						title
-						slug
-						path
-						imgThumbnail
-						headerMediaItem {
-							...mediaItemFields
-						}
-						thumbnailMediaItem {
-							...mediaItemFields
-						}
-						ratingsEnabled
-						referralsEnabled
-						status
-						developmentStatus
-						canceled
-						tigrsAge
-					}
-
-					fragment communityFields on Community {
-						id
-						name
-						path
-						headerId
-						header {
-							...mediaItemFields
-						}
-						thumbnailId
-						thumbnail {
-							...mediaItemFields
-						}
-						postPlaceholderText
-						gameId
-						game {
-							...gameFields
-						}
-						isRemoved
-						hash
-						isVerified
-						featuredBackgroundId
-						featuredBackground {
-							...mediaItemFields
-						}
-					}
-
-					fragment featuredItemFields on FeaturedItem {
-						id
-						content
-						backUrl
-						frontUrl
-						customText
-						customUrl
-						game {
-							...gameFields
-						}
-						community {
-							...communityFields
-						}
-					}
+					${mediaItemFields}
+					${userFields}
+					${gameFields}
+					${communityFields}
+					${featuredItemFields}
 
 					query RouteDiscoverHome {
+						communitiesFeatured {
+							...communityFields
+						}
+
 						latestFeatured: featuredItems(limit: 1) {
 							...featuredItemFields
 						}
@@ -185,6 +205,13 @@ function mapPayload(payload: { [k: string]: any }) {
 								...gameFields
 							}
 						}
+
+						# We only want 21, but need to fetch 4 more in case they
+						# include the featured games and we need to get rid of
+						# them.
+						games(limit: 25, section: GAMES_SECTION_HOME) {
+							...gameFields
+						}
 					}
 				`;
 			},
@@ -195,29 +222,36 @@ function mapPayload(payload: { [k: string]: any }) {
 				}
 
 				const start = Date.now();
-				data = mapPayload(data);
-				const { latestFeatured, featuredItems } = data;
-
-				this.featuredItem =
-					latestFeatured && latestFeatured.length > 0
-						? new FeaturedItem(latestFeatured[0])
-						: null;
-
-				this.games = featuredItems.map((i: any) => new Game(i.game));
+				const payload = mapPayload(data) as {
+					communitiesFeatured: any[];
+					latestFeatured: any[];
+					featuredItems: any[];
+					games: any[];
+				};
 				console.log('time', Date.now() - start);
 
-				// this.featuredItem = data.featuredItem ? new FeaturedItem(data.featuredItem) : null;
+				this.featuredCommunities = Community.populate(payload.communitiesFeatured);
 
-				// // if (data.isFollowingFeatured && this.featuredItem) {
-				// // 	if (this.featuredItem.game) {
-				// // 		this.featuredItem.game.is_following = true;
-				// // 	} else if (this.featuredItem.community) {
-				// // 		this.featuredItem.community.is_member = true;
-				// // 	}
-				// // }
+				this.featuredItem =
+					payload.latestFeatured.length > 0
+						? new FeaturedItem(payload.latestFeatured[0])
+						: null;
 
-				// this.featuredCommunities = Community.populate(data.featuredCommunities);
-				// this.games = Game.populate(data.games);
+				const featuredGames = payload.featuredItems.map(i => new Game(i.game));
+
+				// If the first featured item is a game, then we want to shift
+				// it off the array for featured games since it's showing in the
+				// main spot.
+				if (this.featuredItem?.game) {
+					featuredGames.shift();
+				}
+
+				// Make sure we only have 3.
+				const featuredGameIds = featuredGames.map(i => i.id);
+
+				this.games = Game.populate(payload.games).filter(
+					i => !featuredGameIds.includes(i.id)
+				);
 			},
 		},
 	},

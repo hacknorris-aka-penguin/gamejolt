@@ -30,7 +30,13 @@ function mapArray(items: any[]): any[] {
 
 function mapKeys(obj: object) {
 	const ret: any = {};
-	for (const [key, val] of Object.entries(obj)) {
+	for (let [key, val] of Object.entries(obj)) {
+		// Convert any IDs to integers. GraphQL by default defines all ID types
+		// as string.
+		if (key === 'id' && typeof val === 'string') {
+			val = parseInt(val, 10);
+		}
+
 		const snakeKey = snakeCase(key);
 		ret[snakeKey] = mapValue(val);
 	}
@@ -221,14 +227,12 @@ const featuredItemFields = gql`
 					return;
 				}
 
-				const start = Date.now();
 				const payload = mapPayload(data) as {
 					communitiesFeatured: any[];
 					latestFeatured: any[];
 					featuredItems: any[];
 					games: any[];
 				};
-				console.log('time', Date.now() - start);
 
 				this.featuredCommunities = Community.populate(payload.communitiesFeatured);
 

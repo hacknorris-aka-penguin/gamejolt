@@ -60,6 +60,22 @@ function mapPayload(payload: { [k: string]: any }) {
 	return ret;
 }
 
+const transcodedMediaItemFields = gql`
+	fragment transcodedMediaItemFields on TranscodedMediaItem {
+		id
+		hash
+		filename
+		filetype
+		isAnimated
+		width
+		height
+		filesize
+		addedOn
+		status
+		imgUrl
+	}
+`;
+
 const mediaItemFields = gql`
 	fragment mediaItemFields on MediaItem {
 		id
@@ -68,19 +84,46 @@ const mediaItemFields = gql`
 		hash
 		filename
 		filetype
+		isAnimated
 		width
 		height
 		filesize
-		isAnimated
 		cropStartX
 		cropStartY
 		cropEndX
 		cropEndY
-		rehostedFrom
+		addedOn
 		status
-		preferredFileType
-		avgImgColor
-		imgHasTransparency
+		imgUrl
+		mediaserverUrl
+		transcoded {
+			...transcodedMediaItemFields
+		}
+	}
+`;
+
+const themePresetFields = gql`
+	fragment themePresetFields on ThemePreset {
+		id
+		name
+		highlight
+		backlight
+		notice
+		tint
+		sort
+		isMeme
+	}
+`;
+
+const themeFields = gql`
+	fragment themeFields on Theme {
+		id
+		resource
+		resourceId
+		customColor
+		themePreset {
+			...themePresetFields
+		}
 	}
 `;
 
@@ -102,6 +145,16 @@ const userFields = gql`
 		permissionLevel
 		isVerified
 		isPartner
+		createdOn
+		lastLoggedOn
+		theme {
+			...themeFields
+		}
+		followerCount
+		followingCount
+		# commentCount
+		isFollowing
+		followsYou
 	}
 `;
 
@@ -121,12 +174,54 @@ const gameFields = gql`
 		thumbnailMediaItem {
 			...mediaItemFields
 		}
+		mediaCount
+		followerCount
 		ratingsEnabled
 		referralsEnabled
+		compatibility {
+			osWindows
+			osWindows64
+			osMac
+			osMac64
+			osLinux
+			osLinux64
+			osOther
+			typeDesktop
+			typeFlash
+			typeSilverlight
+			typeUnity
+			typeApplet
+			typeRom
+		}
+		modifiedOn
+		postedOn
+		publishedOn
 		status
 		developmentStatus
 		canceled
 		tigrsAge
+		theme {
+			...themeFields
+		}
+		shouldShowAds
+		# sellable
+		isFollowing
+		perms
+	}
+`;
+
+const userBlockFields = gql`
+	fragment userBlockFields on UserBlock {
+		id
+		# I don't think we need any of this for the common fields.
+		# user {
+		# 	...userFields
+		# }
+		# resource
+		# resourceId
+		# blockedOn
+		# expiresOn
+		# reason
 	}
 `;
 
@@ -135,25 +230,26 @@ const communityFields = gql`
 		id
 		name
 		path
-		headerId
 		header {
 			...mediaItemFields
 		}
-		thumbnailId
 		thumbnail {
 			...mediaItemFields
 		}
+		# game {
+		# 	...gameFields
+		# }
 		postPlaceholderText
-		gameId
-		game {
-			...gameFields
-		}
-		isRemoved
-		hash
 		isVerified
-		featuredBackgroundId
-		featuredBackground {
-			...mediaItemFields
+		addedOn
+		theme {
+			...themeFields
+		}
+		memberCount
+		isMember
+		perms
+		userBlock {
+			...userBlockFields
 		}
 	}
 `;
@@ -172,6 +268,8 @@ const featuredItemFields = gql`
 		community {
 			...communityFields
 		}
+		# jam
+		postedOn
 	}
 `;
 
@@ -189,7 +287,11 @@ const featuredItemFields = gql`
 		payload: {
 			query() {
 				return gql`
+					${transcodedMediaItemFields}
 					${mediaItemFields}
+					${themePresetFields}
+					${themeFields}
+					${userBlockFields}
 					${userFields}
 					${gameFields}
 					${communityFields}

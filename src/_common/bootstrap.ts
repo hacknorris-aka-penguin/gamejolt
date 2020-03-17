@@ -9,6 +9,7 @@ import { Analytics } from './analytics/analytics.service';
 import { AppTrackEvent } from './analytics/track-event.directive';
 import AppButton from './button/button.vue';
 import { Connection } from './connection/connection-service';
+import { Environment } from './environment/environment.service';
 import AppJolticon from './jolticon/jolticon.vue';
 import AppLinkExternal from './link/external/external.vue';
 import AppLinkHelp from './link/help/help.vue';
@@ -25,8 +26,7 @@ export function bootstrapCommon(appComponent: typeof Vue, store: VuexStore, rout
 	Vue.use(VueApollo);
 
 	const apolloClient = new ApolloClient({
-		// You should use an absolute URL here
-		uri: 'http://localhost:9666/',
+		uri: Environment.graphexHost,
 	});
 
 	const apolloProvider = new VueApollo({

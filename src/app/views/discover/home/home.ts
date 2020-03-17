@@ -28,7 +28,7 @@ function mapArray(items: any[]): any[] {
 	return items.map(i => mapValue(i));
 }
 
-function mapKeys(obj: object) {
+function mapKeys(obj: any) {
 	const ret: any = {};
 	for (let [key, val] of Object.entries(obj)) {
 		// Convert any IDs to integers. GraphQL by default defines all ID types
@@ -47,7 +47,18 @@ function mapValue(val: any) {
 	if (Array.isArray(val)) {
 		return mapArray(val);
 	} else if (isObject(val)) {
-		return mapKeys(val);
+		const mapped = mapKeys(val);
+
+		if (mapped.__typename === 'MediaItem') {
+			if (mapped.transcoded && mapped.transcoded.length > 0) {
+				const mp4 = mapped.transcoded.find((i: any) => i.filetype === 'mp4');
+				const webm = mapped.transcoded.find((i: any) => i.filetype === 'webm');
+				mapped.mediaserver_url_mp4 = mp4?.img_url;
+				mapped.mediaserver_url_webm = webm?.img_url;
+			}
+		}
+
+		return mapped;
 	}
 	return val;
 }
@@ -63,15 +74,15 @@ function mapPayload(payload: { [k: string]: any }) {
 const transcodedMediaItemFields = gql`
 	fragment transcodedMediaItemFields on TranscodedMediaItem {
 		id
-		hash
-		filename
+		# hash
+		# filename
 		filetype
-		isAnimated
-		width
-		height
-		filesize
-		addedOn
-		status
+		# isAnimated
+		# width
+		# height
+		# filesize
+		# addedOn
+		# status
 		imgUrl
 	}
 `;
@@ -79,21 +90,21 @@ const transcodedMediaItemFields = gql`
 const mediaItemFields = gql`
 	fragment mediaItemFields on MediaItem {
 		id
-		parentId
-		type
-		hash
-		filename
-		filetype
+		# parentId
+		# type
+		# hash
+		# filename
+		# filetype
 		isAnimated
 		width
 		height
-		filesize
-		cropStartX
-		cropStartY
-		cropEndX
-		cropEndY
-		addedOn
-		status
+		# filesize
+		# cropStartX
+		# cropStartY
+		# cropEndX
+		# cropEndY
+		# addedOn
+		# status
 		imgUrl
 		mediaserverUrl
 		transcoded {
@@ -134,19 +145,19 @@ const userFields = gql`
 		username
 		name
 		displayName
-		webSite
+		# webSite
 		url
 		slug
 		imgAvatar
-		dogtag
-		shoutsEnabled
-		friendRequestsEnabled
+		# dogtag
+		# shoutsEnabled
+		# friendRequestsEnabled
 		status
 		permissionLevel
 		isVerified
-		isPartner
-		createdOn
-		lastLoggedOn
+		# isPartner
+		# createdOn
+		# lastLoggedOn
 		theme {
 			...themeFields
 		}
@@ -166,18 +177,20 @@ const gameFields = gql`
 		}
 		title
 		slug
-		path
-		imgThumbnail
+		# path
+		# imgThumbnail
 		headerMediaItem {
 			...mediaItemFields
 		}
 		thumbnailMediaItem {
 			...mediaItemFields
 		}
+		# I think we only have this so that we know if we should show the media
+		# bar placeholder before the game overview page loads...
 		mediaCount
 		followerCount
 		ratingsEnabled
-		referralsEnabled
+		# referralsEnabled
 		compatibility {
 			osWindows
 			osWindows64
@@ -193,9 +206,9 @@ const gameFields = gql`
 			typeApplet
 			typeRom
 		}
-		modifiedOn
-		postedOn
-		publishedOn
+		# modifiedOn
+		# postedOn
+		# publishedOn
 		status
 		developmentStatus
 		canceled
@@ -230,18 +243,18 @@ const communityFields = gql`
 		id
 		name
 		path
-		header {
-			...mediaItemFields
-		}
+		# header {
+		# 	...mediaItemFields
+		# }
 		thumbnail {
 			...mediaItemFields
 		}
 		# game {
 		# 	...gameFields
 		# }
-		postPlaceholderText
+		# postPlaceholderText
 		isVerified
-		addedOn
+		# addedOn
 		theme {
 			...themeFields
 		}
@@ -269,7 +282,7 @@ const featuredItemFields = gql`
 			...communityFields
 		}
 		# jam
-		postedOn
+		# postedOn
 	}
 `;
 
@@ -306,7 +319,7 @@ const featuredItemFields = gql`
 							...featuredItemFields
 						}
 
-						featuredItems(limit: 4, onlyGames: true) {
+						featuredGameItems: featuredItems(limit: 4, onlyGames: true) {
 							id
 							# We only need the game from this.
 							game {
@@ -332,7 +345,7 @@ const featuredItemFields = gql`
 				const payload = mapPayload(data) as {
 					communitiesFeatured: any[];
 					latestFeatured: any[];
-					featuredItems: any[];
+					featuredGameItems: any[];
 					games: any[];
 				};
 
@@ -343,7 +356,8 @@ const featuredItemFields = gql`
 						? new FeaturedItem(payload.latestFeatured[0])
 						: null;
 
-				const featuredGames = payload.featuredItems.map(i => new Game(i.game));
+				const featuredGames = payload.featuredGameItems.map(i => new Game(i.game));
+				const featuredGameIds = featuredGames.map(i => i.id);
 
 				// If the first featured item is a game, then we want to shift
 				// it off the array for featured games since it's showing in the
@@ -352,12 +366,11 @@ const featuredItemFields = gql`
 					featuredGames.shift();
 				}
 
-				// Make sure we only have 3.
-				const featuredGameIds = featuredGames.map(i => i.id);
-
-				this.games = Game.populate(payload.games).filter(
-					i => !featuredGameIds.includes(i.id)
-				);
+				// We show the featured games first and then show the rest.
+				this.games = [
+					...featuredGames,
+					...Game.populate(payload.games).filter(i => !featuredGameIds.includes(i.id)),
+				];
 			},
 		},
 	},

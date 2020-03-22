@@ -31,33 +31,20 @@
 								<span class="badge">{{ friendRequestCount }}</span>
 							</a>
 						</li>
-						<li v-if="outgoing.length">
+						<li v-if="outgoingCount > 0">
 							<a :class="{ active: activeTab === 'pending' }" @click="setActiveTab('pending')">
 								<translate>Sent Requests</translate>
-								<span class="badge">{{ outgoing.length }}</span>
+								<span class="badge">{{ outgoingCount }}</span>
 							</a>
 						</li>
 					</ul>
 				</nav>
 			</div>
 			<div class="shell-card-popover fill-dark" slot="popover">
-				<template v-if="isLoading">
-					<br />
-					<app-loading centered />
-				</template>
-				<div v-else-if="requests.length">
-					<app-shell-friend-request-popover-item
-						v-for="request of requests"
-						:key="request.id"
-						:request="request"
-						@accept="acceptRequest(request)"
-						@reject="rejectRequest(request)"
-						@cancel="cancelRequest(request)"
-					/>
-				</div>
-				<div class="alert" v-else>
-					<translate>No friend requests right now.</translate>
-				</div>
+				<app-shell-friend-request-popover-container
+					:active-tab="activeTab"
+					@count="onCountChange"
+				/>
 			</div>
 		</template>
 	</app-popper>

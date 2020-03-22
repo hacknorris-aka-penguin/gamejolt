@@ -9,6 +9,7 @@ import { Analytics } from './analytics/analytics.service';
 import { AppTrackEvent } from './analytics/track-event.directive';
 import AppButton from './button/button.vue';
 import { Connection } from './connection/connection-service';
+import { getCookie } from './cookie/cookie.service';
 import { Environment } from './environment/environment.service';
 import AppJolticon from './jolticon/jolticon.vue';
 import AppLinkExternal from './link/external/external.vue';
@@ -27,6 +28,14 @@ export function bootstrapCommon(appComponent: typeof Vue, store: VuexStore, rout
 
 	const apolloClient = new ApolloClient({
 		uri: Environment.graphexHost,
+		async request(operation) {
+			const token = await getCookie('frontend');
+			operation.setContext({
+				headers: {
+					authorization: `Bearer ${token}`,
+				},
+			});
+		},
 	});
 
 	const apolloProvider = new VueApollo({

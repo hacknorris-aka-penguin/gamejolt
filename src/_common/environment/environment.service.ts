@@ -63,7 +63,7 @@ if (GJ_ENVIRONMENT === 'development') {
 	Environment.mediaserverUrl = 'http://media.development.gamejolt.com';
 
 	Environment.apiHost = GJ_TUNNELS.backend || 'http://development.gamejolt.com';
-	Environment.apiHost = 'http://localhost:9666';
+	Environment.graphexHost = 'http://localhost:9666';
 	Environment.gameserverApiHost = 'http://development.gamejolt.com';
 	Environment.activityStreamHost = 'http://activity.development.gamejolt.com';
 	Environment.chatHost = 'http://chat.development.gamejolt.com';

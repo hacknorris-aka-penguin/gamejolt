@@ -1,12 +1,12 @@
+import Vue from 'vue';
+import { Component, Emit, Prop } from 'vue-property-decorator';
 import AppCard from '../../../../../_common/card/card.vue';
 import { Screen } from '../../../../../_common/screen/screen-service';
 import { AppScrollInview } from '../../../../../_common/scroll/inview/inview';
+import { AppState, AppStore } from '../../../../../_common/store/app-store';
 import { AppTooltip } from '../../../../../_common/tooltip/tooltip';
 import { UserFriendship } from '../../../../../_common/user/friendship/friendship.model';
 import AppUserAvatarImg from '../../../../../_common/user/user-avatar/img/img.vue';
-import { AppState, AppStore } from '../../../../../_common/store/app-store';
-import Vue from 'vue';
-import { Component, Emit, Prop } from 'vue-property-decorator';
 
 @Component({
 	components: {
@@ -30,14 +30,14 @@ export default class AppShellFriendRequestPopoverItem extends Vue {
 	readonly Screen = Screen;
 
 	get them() {
-		return this.request.getThem(this.user!);
+		return this.request.getThem(this.user!)!;
 	}
 
 	/**
 	 * Is it a request we sent?
 	 */
 	get isPending() {
-		return this.request.target_user.id !== this.user!.id;
+		return this.them?.id !== this.user?.id;
 	}
 
 	@Emit()

@@ -2,22 +2,18 @@ import Vue from 'vue';
 import { Component } from 'vue-property-decorator';
 import { Mutation, State } from 'vuex-class/lib/bindings';
 import { Connection } from '../../../../_common/connection/connection-service';
-import AppLoading from '../../../../_common/loading/loading.vue';
 import AppPopper from '../../../../_common/popper/popper.vue';
 import { AppState, AppStore } from '../../../../_common/store/app-store';
 import { AppTooltip } from '../../../../_common/tooltip/tooltip';
-import { UserFriendship } from '../../../../_common/user/friendship/friendship.model';
 import { Store } from '../../../store';
-import { UserFriendshipHelper } from '../../user/friendships-helper/friendship-helper.service';
-import AppShellFriendRequestPopoverItem from './item/item.vue';
+import AppShellFriendRequestPopoverContainer from './container/container.vue';
 
-type Tab = 'requests' | 'pending';
+export type FriendRequestsTab = 'requests' | 'pending';
 
 @Component({
 	components: {
 		AppPopper,
-		AppLoading,
-		AppShellFriendRequestPopoverItem,
+		AppShellFriendRequestPopoverContainer,
 	},
 	directives: {
 		AppTooltip,
@@ -34,70 +30,26 @@ export default class AppShellFriendRequestPopover extends Vue {
 	user!: AppStore['user'];
 
 	isShowing = false;
-	isLoading = false;
-
-	activeTab: Tab = 'requests';
-	incoming: UserFriendship[] = [];
-	outgoing: UserFriendship[] = [];
+	activeTab: FriendRequestsTab = 'requests';
+	// We need to handle outgoing separately since it's not part of the store.
+	outgoingCount = 0;
 
 	readonly Connection = Connection;
 
-	get requests() {
-		return this.activeTab === 'requests' ? this.incoming : this.outgoing;
-	}
-
-	async onShow() {
-		if (this.isLoading) {
-			return;
-		}
-
+	onShow() {
 		this.isShowing = true;
-		this.isLoading = true;
-
-		const { requests, pending } = await UserFriendship.fetchRequests();
-		this.incoming = requests;
-		this.setFriendRequestCount(this.incoming.length);
-		this.outgoing = pending;
-		this.isLoading = false;
 	}
 
 	onHide() {
 		this.isShowing = false;
 	}
 
-	setActiveTab(tab: Tab) {
+	onCountChange({ incoming, outgoing }: { incoming: number; outgoing: number }) {
+		this.setFriendRequestCount(incoming);
+		this.outgoingCount = outgoing;
+	}
+
+	setActiveTab(tab: FriendRequestsTab) {
 		this.activeTab = tab;
-	}
-
-	async acceptRequest(request: UserFriendship) {
-		await UserFriendshipHelper.acceptRequest(request);
-		this.removeRequest(request);
-	}
-
-	async rejectRequest(request: UserFriendship) {
-		if (!(await UserFriendshipHelper.rejectRequest(request))) {
-			return;
-		}
-		this.removeRequest(request);
-	}
-
-	async cancelRequest(request: UserFriendship) {
-		if (!(await UserFriendshipHelper.cancelRequest(request))) {
-			return;
-		}
-		this.removeRequest(request);
-	}
-
-	private removeRequest(request: UserFriendship) {
-		const index = this.incoming.findIndex(item => item.id === request.id);
-		if (index !== -1) {
-			this.incoming.splice(index, 1);
-		}
-
-		this.setFriendRequestCount(this.incoming.length);
-
-		if (this.activeTab === 'pending' && !this.outgoing.length) {
-			this.setActiveTab('requests');
-		}
 	}
 }

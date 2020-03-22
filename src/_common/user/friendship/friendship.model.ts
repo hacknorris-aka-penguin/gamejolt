@@ -1,6 +1,6 @@
+import { Api } from '../../api/api.service';
 import { Model } from '../../model/model.service';
 import { User } from '../user.model';
-import { Api } from '../../api/api.service';
 
 export class UserFriendship extends Model {
 	static readonly STATE_NONE = 0;
@@ -8,8 +8,6 @@ export class UserFriendship extends Model {
 	static readonly STATE_REQUEST_RECEIVED = 2;
 	static readonly STATE_FRIENDS = 3;
 
-	user_id!: number;
-	target_user_id!: number;
 	user!: User;
 	target_user!: User;
 	created_on!: number;
@@ -47,11 +45,19 @@ export class UserFriendship extends Model {
 	}
 
 	getThem(us: User) {
-		return this.user_id !== us.id ? this.user : this.target_user;
+		if (this.user && this.user.id !== us.id) {
+			return this.user;
+		} else if (this.target_user && this.target_user.id !== us.id) {
+			return this.target_user;
+		}
+		return null;
 	}
 
 	$save() {
-		return this.$_save('/web/dash/friends/requests/add/' + this.target_user_id, 'userFriendship');
+		return this.$_save(
+			'/web/dash/friends/requests/add/' + this.target_user.id,
+			'userFriendship'
+		);
 	}
 
 	$accept() {

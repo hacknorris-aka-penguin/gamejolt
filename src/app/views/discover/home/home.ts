@@ -1,12 +1,23 @@
-import { gql } from 'apollo-boost';
+import gql from 'graphql-tag';
 import { Component } from 'vue-property-decorator';
 import { State } from 'vuex-class';
-import { Api } from '../../../../_common/api/api.service';
 import { Community } from '../../../../_common/community/community.model';
-import { Environment } from '../../../../_common/environment/environment.service';
 import { Game } from '../../../../_common/game/game.model';
+import {
+	communityFields,
+	featuredItemFields,
+	gameFields,
+	makeRouteQuery,
+	mapQueryPayload,
+	mediaItemFields,
+	themeFields,
+	themePresetFields,
+	transcodedMediaItemFields,
+	userBlockFields,
+	userFields,
+} from '../../../../_common/graphql';
 import { Meta } from '../../../../_common/meta/meta-service';
-import { BaseRouteComponent, RouteResolver } from '../../../../_common/route/route-component';
+import { BaseRouteComponent } from '../../../../_common/route/route-component';
 import { FeaturedItem } from '../../../components/featured-item/featured-item.model';
 import AppGameGrid from '../../../components/game/grid/grid.vue';
 import AppGameGridPlaceholder from '../../../components/game/grid/placeholder/placeholder.vue';
@@ -15,276 +26,6 @@ import { Store } from '../../../store/index';
 import AppDiscoverHomeBanner from './_banner/banner.vue';
 import AppDiscoverHomeCommunities from './_communities/communities.vue';
 import AppDiscoverHomeTags from './_tags/tags.vue';
-
-function isObject(val: any): boolean {
-	return typeof val === 'object' && val !== null;
-}
-
-function snakeCase(str: string) {
-	return str.replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase();
-}
-
-function mapArray(items: any[]): any[] {
-	return items.map(i => mapValue(i));
-}
-
-function mapKeys(obj: any) {
-	const ret: any = {};
-	for (let [key, val] of Object.entries(obj)) {
-		// Convert any IDs to integers. GraphQL by default defines all ID types
-		// as string.
-		if (key === 'id' && typeof val === 'string') {
-			val = parseInt(val, 10);
-		}
-
-		const snakeKey = snakeCase(key);
-		ret[snakeKey] = mapValue(val);
-	}
-	return ret;
-}
-
-function mapValue(val: any) {
-	if (Array.isArray(val)) {
-		return mapArray(val);
-	} else if (isObject(val)) {
-		const mapped = mapKeys(val);
-
-		if (mapped.__typename === 'MediaItem') {
-			if (mapped.transcoded && mapped.transcoded.length > 0) {
-				const mp4 = mapped.transcoded.find((i: any) => i.filetype === 'mp4');
-				const webm = mapped.transcoded.find((i: any) => i.filetype === 'webm');
-				mapped.mediaserver_url_mp4 = mp4?.img_url;
-				mapped.mediaserver_url_webm = webm?.img_url;
-			}
-		}
-
-		return mapped;
-	}
-	return val;
-}
-
-function mapPayload(payload: { [k: string]: any }) {
-	const ret: { [k: string]: any } = {};
-	for (const k in payload) {
-		ret[k] = mapValue(payload[k]);
-	}
-	return ret;
-}
-
-const transcodedMediaItemFields = gql`
-	fragment transcodedMediaItemFields on TranscodedMediaItem {
-		id
-		# hash
-		# filename
-		filetype
-		# isAnimated
-		# width
-		# height
-		# filesize
-		# addedOn
-		# status
-		imgUrl
-	}
-`;
-
-const mediaItemFields = gql`
-	fragment mediaItemFields on MediaItem {
-		id
-		# parentId
-		# type
-		# hash
-		# filename
-		# filetype
-		isAnimated
-		width
-		height
-		# filesize
-		# cropStartX
-		# cropStartY
-		# cropEndX
-		# cropEndY
-		# addedOn
-		# status
-		imgUrl
-		mediaserverUrl
-		transcoded {
-			...transcodedMediaItemFields
-		}
-	}
-`;
-
-const themePresetFields = gql`
-	fragment themePresetFields on ThemePreset {
-		id
-		name
-		highlight
-		backlight
-		notice
-		tint
-		sort
-		isMeme
-	}
-`;
-
-const themeFields = gql`
-	fragment themeFields on Theme {
-		id
-		resource
-		resourceId
-		customColor
-		themePreset {
-			...themePresetFields
-		}
-	}
-`;
-
-const userFields = gql`
-	fragment userFields on User {
-		id
-		type
-		username
-		name
-		displayName
-		# webSite
-		url
-		slug
-		imgAvatar
-		# dogtag
-		# shoutsEnabled
-		# friendRequestsEnabled
-		status
-		permissionLevel
-		isVerified
-		# isPartner
-		# createdOn
-		# lastLoggedOn
-		theme {
-			...themeFields
-		}
-		followerCount
-		followingCount
-		# commentCount
-		isFollowing
-		followsYou
-	}
-`;
-
-const gameFields = gql`
-	fragment gameFields on Game {
-		id
-		developer {
-			...userFields
-		}
-		title
-		slug
-		# path
-		# imgThumbnail
-		headerMediaItem {
-			...mediaItemFields
-		}
-		thumbnailMediaItem {
-			...mediaItemFields
-		}
-		# I think we only have this so that we know if we should show the media
-		# bar placeholder before the game overview page loads...
-		mediaCount
-		followerCount
-		ratingsEnabled
-		# referralsEnabled
-		compatibility {
-			osWindows
-			osWindows64
-			osMac
-			osMac64
-			osLinux
-			osLinux64
-			osOther
-			typeDesktop
-			typeFlash
-			typeSilverlight
-			typeUnity
-			typeApplet
-			typeRom
-		}
-		# modifiedOn
-		# postedOn
-		# publishedOn
-		status
-		developmentStatus
-		canceled
-		tigrsAge
-		theme {
-			...themeFields
-		}
-		shouldShowAds
-		# sellable
-		isFollowing
-		perms
-	}
-`;
-
-const userBlockFields = gql`
-	fragment userBlockFields on UserBlock {
-		id
-		# I don't think we need any of this for the common fields.
-		# user {
-		# 	...userFields
-		# }
-		# resource
-		# resourceId
-		# blockedOn
-		# expiresOn
-		# reason
-	}
-`;
-
-const communityFields = gql`
-	fragment communityFields on Community {
-		id
-		name
-		path
-		# header {
-		# 	...mediaItemFields
-		# }
-		thumbnail {
-			...mediaItemFields
-		}
-		# game {
-		# 	...gameFields
-		# }
-		# postPlaceholderText
-		isVerified
-		# addedOn
-		theme {
-			...themeFields
-		}
-		memberCount
-		isMember
-		perms
-		userBlock {
-			...userBlockFields
-		}
-	}
-`;
-
-const featuredItemFields = gql`
-	fragment featuredItemFields on FeaturedItem {
-		id
-		content
-		backUrl
-		frontUrl
-		customText
-		customUrl
-		game {
-			...gameFields
-		}
-		community {
-			...communityFields
-		}
-		# jam
-		# postedOn
-	}
-`;
 
 @Component({
 	name: 'RouteDiscoverHome',
@@ -297,52 +38,49 @@ const featuredItemFields = gql`
 		AppAuthJoin: AppAuthJoinLazy,
 	},
 	apollo: {
-		payload: {
-			query() {
-				return gql`
-					${transcodedMediaItemFields}
-					${mediaItemFields}
-					${themePresetFields}
-					${themeFields}
-					${userBlockFields}
-					${userFields}
-					${gameFields}
-					${communityFields}
-					${featuredItemFields}
+		payload: makeRouteQuery<RouteDiscoverHome>(
+			gql`
+				${transcodedMediaItemFields}
+				${mediaItemFields}
+				${themePresetFields}
+				${themeFields}
+				${userBlockFields}
+				${userFields}
+				${gameFields}
+				${communityFields}
+				${featuredItemFields}
 
-					query RouteDiscoverHome {
-						communitiesFeatured {
-							...communityFields
-						}
+				query RouteDiscoverHome {
+					communitiesFeatured {
+						...communityFields
+					}
 
-						latestFeatured: featuredItems(limit: 1) {
-							...featuredItemFields
-						}
+					latestFeatured: featuredItems(limit: 1) {
+						...featuredItemFields
+					}
 
-						featuredGameItems: featuredItems(limit: 4, onlyGames: true) {
-							id
-							# We only need the game from this.
-							game {
-								...gameFields
-							}
-						}
-
-						# We only want 21, but need to fetch 4 more in case they
-						# include the featured games and we need to get rid of
-						# them.
-						games(limit: 25, section: GAMES_SECTION_HOME) {
+					featuredGameItems: featuredItems(limit: 4, onlyGames: true) {
+						id
+						# We only need the game from this.
+						game {
 							...gameFields
 						}
 					}
-				`;
-			},
-			update: payload => ({ payload }),
-			result(this: RouteDiscoverHome, { data }) {
+
+					# We only want 21, but need to fetch 4 more in case they
+					# include the featured games and we need to get rid of
+					# them.
+					games(limit: 25, section: GAMES_SECTION_HOME) {
+						...gameFields
+					}
+				}
+			`,
+			function(data) {
 				if (!data) {
 					return;
 				}
 
-				const payload = mapPayload(data) as {
+				const payload = mapQueryPayload(data) as {
 					communitiesFeatured: any[];
 					latestFeatured: any[];
 					featuredGameItems: any[];
@@ -371,21 +109,21 @@ const featuredItemFields = gql`
 					...featuredGames,
 					...Game.populate(payload.games).filter(i => !featuredGameIds.includes(i.id)),
 				];
-			},
-		},
+
+				this.isRouteBootstrapped = true;
+			}
+		),
 	},
 })
-@RouteResolver({
-	cache: true,
-	lazy: true,
-	deps: {},
-	resolver: () => Api.sendRequest('/web/discover'),
-})
+// @RouteResolver({
+// 	cache: true,
+// 	lazy: true,
+// 	deps: {},
+// 	resolver: () => Api.sendRequest('/web/discover'),
+// })
 export default class RouteDiscoverHome extends BaseRouteComponent {
 	@State
 	app!: Store['app'];
-
-	graphPayload: any = null;
 
 	featuredItem: FeaturedItem | null = null;
 	featuredCommunities: Community[] = [];
@@ -395,36 +133,36 @@ export default class RouteDiscoverHome extends BaseRouteComponent {
 		Meta.setTitle(null);
 	}
 
-	routeResolved($payload: any) {
-		Meta.description = $payload.metaDescription;
-		Meta.fb = $payload.fb;
-		Meta.twitter = $payload.twitter;
-		Meta.fb.image = Meta.twitter.image = require('../../../img/social/social-share-header.png');
-		Meta.fb.url = Meta.twitter.url = Environment.baseUrl;
+	// routeResolved($payload: any) {
+	// 	Meta.description = $payload.metaDescription;
+	// 	Meta.fb = $payload.fb;
+	// 	Meta.twitter = $payload.twitter;
+	// 	Meta.fb.image = Meta.twitter.image = require('../../../img/social/social-share-header.png');
+	// 	Meta.fb.url = Meta.twitter.url = Environment.baseUrl;
 
-		Meta.microdata = {
-			'@context': 'http://schema.org',
-			'@type': 'WebSite',
-			url: 'https://gamejolt.com/',
-			name: 'Game Jolt',
-			potentialAction: {
-				'@type': 'SearchAction',
-				target: 'https://gamejolt.com/search?q={search_term_string}',
-				'query-input': 'required name=search_term_string',
-			},
-		};
+	// 	Meta.microdata = {
+	// 		'@context': 'http://schema.org',
+	// 		'@type': 'WebSite',
+	// 		url: 'https://gamejolt.com/',
+	// 		name: 'Game Jolt',
+	// 		potentialAction: {
+	// 			'@type': 'SearchAction',
+	// 			target: 'https://gamejolt.com/search?q={search_term_string}',
+	// 			'query-input': 'required name=search_term_string',
+	// 		},
+	// 	};
 
-		// this.featuredItem = $payload.featuredItem ? new FeaturedItem($payload.featuredItem) : null;
+	// 	// this.featuredItem = $payload.featuredItem ? new FeaturedItem($payload.featuredItem) : null;
 
-		// if ($payload.isFollowingFeatured && this.featuredItem) {
-		// 	if (this.featuredItem.game) {
-		// 		this.featuredItem.game.is_following = true;
-		// 	} else if (this.featuredItem.community) {
-		// 		this.featuredItem.community.is_member = true;
-		// 	}
-		// }
+	// 	// if ($payload.isFollowingFeatured && this.featuredItem) {
+	// 	// 	if (this.featuredItem.game) {
+	// 	// 		this.featuredItem.game.is_following = true;
+	// 	// 	} else if (this.featuredItem.community) {
+	// 	// 		this.featuredItem.community.is_member = true;
+	// 	// 	}
+	// 	// }
 
-		// this.featuredCommunities = Community.populate($payload.featuredCommunities);
-		// this.games = Game.populate($payload.games);
-	}
+	// 	// this.featuredCommunities = Community.populate($payload.featuredCommunities);
+	// 	// this.games = Game.populate($payload.games);
+	// }
 }

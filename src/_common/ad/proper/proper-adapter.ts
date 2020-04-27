@@ -52,7 +52,7 @@ export class AdProperAdapter extends AdAdapterBase {
 			try {
 				cb();
 			} catch (e) {
-				console.warn('Proper: Failed to execute Proper function call.', e);
+				console.warn('Proper: Failed to execute function call.', e);
 			}
 		});
 	}

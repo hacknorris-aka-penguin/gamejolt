@@ -18,17 +18,25 @@
 
 		<section class="section">
 			<div class="container-xl">
-				<h2 class="section-header">Featured Community</h2>
-				<app-game-community-badge :community="featuredCommunity" />
+				<h2 class="section-header">Hot Posts</h2>
+				<div class="row">
+					<div v-for="item of items" :key="item.id" class="col-xs-2">
+						<app-post-card :post="item.action" with-user />
+					</div>
+				</div>
 			</div>
 		</section>
 
 		<section class="section">
 			<div class="container-xl">
-				<h2 class="section-header">Hot Posts</h2>
+				<h2 class="section-header">Featured Communities</h2>
 				<div class="row">
-					<div v-for="item of items" :key="item.id" class="col-xs-2">
-						<app-post-card :post="item.action" with-user />
+					<div
+						v-for="community of communities"
+						:key="community.id"
+						class="col-sm-6 col-md-4 col-lg-3 anim-fade-in"
+					>
+						<app-community-card :community="community" elevate />
 					</div>
 				</div>
 			</div>

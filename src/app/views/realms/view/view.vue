@@ -5,7 +5,7 @@
 		<section
 			class="-banner"
 			:style="{
-				'background-image': `url('${require('./test.png')}')`,
+				'background-image': `url('https://www.dropbox.com/s/m75rd6je0sn93ea/test.png?dl=1')`,
 			}"
 		>
 			<div class="-shade" />

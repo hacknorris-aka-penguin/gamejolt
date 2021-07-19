@@ -1,10 +1,26 @@
-@require '~styles/variables'
-@require '~styles-lib/mixins'
+@import '~styles/variables'
+@import '~styles-lib/mixins'
 
 .community-card
 	rounded-corners-lg()
 	margin-bottom: $line-height-computed
 	overflow: hidden
+
+	a&
+		display: block
+
+		@media $media-sm-up
+			border: $border-width-base solid transparent
+
+			&:hover
+				border-color: var(--theme-link)
+				cursor: pointer
+				// This will immediately show the border and then transition out.
+				transition: none !important
+
+	a&
+	a
+		color: var(--theme-fg)
 
 .popper-wrapper .community-card
 	min-width: 300px

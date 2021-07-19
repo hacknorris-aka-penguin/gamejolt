@@ -1,7 +1,7 @@
 <script lang="ts" src="./card"></script>
 
 <template>
-	<app-community-card-base :community="community" overflow>
+	<app-community-card-base :community="community" overflow controls>
 		<template #thumbnail>
 			<app-editable-thumbnail />
 		</template>

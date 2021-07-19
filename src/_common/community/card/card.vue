@@ -6,6 +6,7 @@
 		:elevate="elevate"
 		:allow-edit="allowEdit"
 		:track-goto="trackGoto"
+		link
 	>
 		<template #thumbnail>
 			<router-link :to="community.routeLocation" @click.native="trackGotoCommunity()">

@@ -27,6 +27,8 @@ export default class AppCommunityCardBase extends Vue {
 	@Prop(propOptional(Boolean, false)) elevate!: boolean;
 	@Prop(propOptional(Boolean, true)) allowEdit!: boolean;
 	@Prop(propOptional(Boolean, false)) trackGoto!: boolean;
+	@Prop(propOptional(Boolean, false)) link!: boolean;
+	@Prop(propOptional(Boolean, false)) controls!: boolean;
 
 	@AppState user!: AppStore['user'];
 

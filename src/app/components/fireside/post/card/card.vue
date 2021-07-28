@@ -32,24 +32,34 @@
 								<app-video
 									class="-video"
 									:player="videoController"
+									:should-play="shouldPlayVideo"
 									allow-degraded-autoplay
 									:style="{
 										width: videoWidth,
 										height: videoHeight,
 									}"
 								/>
-
-								<div v-if="videoController.isLoading" class="-overlay">
-									<app-loading no-color hide-label stationary />
-								</div>
 							</template>
 						</div>
 						<div class="-inner-gradient" />
 					</template>
 
-					<app-content-viewer v-else class="-inner-message" :source="post.lead_content" />
+					<template v-else>
+						<app-fade-collapse
+							class="-inner-message"
+							:collapse-height="leadHeight"
+							ignore-threshold
+							size="sm"
+						>
+							<app-content-viewer :source="post.lead_content" />
+						</app-fade-collapse>
+					</template>
 
-					<router-link class="-link" tag="div" :to="post.routeLocation" />
+					<router-link
+						class="-link"
+						:to="post.routeLocation"
+						@click.native="trackPostOpen()"
+					/>
 
 					<div class="-details" :class="{ '-light': !!mediaItem }">
 						<template v-if="withUser">
@@ -67,8 +77,8 @@
 
 						<template v-if="post.hasPoll">
 							<app-jolticon
+								:class="{ '-voted': votedOnPoll }"
 								icon="pedestals-numbers"
-								:style="{ color: pollIconColor }"
 							/>
 						</template>
 
@@ -76,7 +86,7 @@
 							<app-jolticon icon="thumbtack" />
 						</template>
 
-						<app-jolticon icon="heart-filled" :style="{ color: heartIconColor }" />
+						<app-jolticon icon="heart-filled" :class="{ '-liked': likedPost }" />
 						<span class="-details-likes">
 							{{ fuzzynumber(post.like_count) }}
 						</span>
@@ -88,29 +98,10 @@
 </template>
 
 <style lang="stylus" scoped>
-@import '~styles/variables'
-@import '~styles-lib/mixins'
+@import './common'
 
-$-aspect-ratio = (10 / 16)
 $-base-width = 200px
 $-padding = 8px
-
-.post-card
-	rounded-corners-lg()
-	elevate-1()
-	overflow: hidden
-	position: relative
-	background-color: var(--theme-bg)
-	aspect-ratio: $-aspect-ratio
-	// Safari needs this to actually clip our inner content to the border-radius we have assigned.
-	transform: translateZ(0)
-	cursor: pointer
-
-	&:hover
-		elevate-2()
-
-		.-link
-			border-color: var(--theme-link)
 
 .-inner
 	&
@@ -139,13 +130,19 @@ $-padding = 8px
 		top: $-padding
 		right: $-padding
 		bottom: $-padding
-		font-size: 30
+
+		>>> .fireside-post-lead-content
+			font-size: ceil($font-size-base * 1.1)
 
 .-light
 	&
 	> *
 		color: var(--theme-white) !important
 		text-shadow: black 1px 1px 4px
+
+.-voted
+.-liked
+	color: $gj-overlay-notice !important
 
 .-link
 	rounded-corners-lg()
@@ -212,15 +209,4 @@ $-padding = 8px
 	>>> > video
 		height: 100% !important
 		width: 100% !important
-
-.-overlay
-	position: absolute
-	left: 0
-	top: 0
-	right: 0
-	bottom: 0
-	background-color: rgba(0, 0, 0, 0.45)
-	display: flex
-	justify-content: center
-	align-items: center
 </style>

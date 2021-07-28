@@ -1,20 +1,26 @@
 import Component from 'vue-class-component';
-import { InjectReactive } from 'vue-property-decorator';
+import { InjectReactive, ProvideReactive } from 'vue-property-decorator';
 import { State } from 'vuex-class';
 import { sleep } from '../../../utils/utils';
 import { Api } from '../../../_common/api/api.service';
 import AppAuthJoin from '../../../_common/auth/join/join.vue';
+import AppCommunityThumbnailImg from '../../../_common/community/thumbnail/img/img.vue';
 import { getCookie } from '../../../_common/cookie/cookie.service';
 import { Fireside } from '../../../_common/fireside/fireside.model';
+import { FiresideRole } from '../../../_common/fireside/role/role.model';
 import { Growls } from '../../../_common/growls/growls.service';
 import AppIllustration from '../../../_common/illustration/illustration.vue';
 import AppLoading from '../../../_common/loading/loading.vue';
 import { Meta } from '../../../_common/meta/meta-service';
+import { AppObserveDimensions } from '../../../_common/observe-dimensions/observe-dimensions.directive';
+import { AppResponsiveDimensions } from '../../../_common/responsive-dimensions/responsive-dimensions';
 import { BaseRouteComponent, RouteResolver } from '../../../_common/route/route-component';
 import { Screen } from '../../../_common/screen/screen-service';
+import AppScrollScroller from '../../../_common/scroll/scroller/scroller.vue';
 import { AppState, AppStore } from '../../../_common/store/app-store';
 import { AppTooltip } from '../../../_common/tooltip/tooltip-directive';
 import AppUserAvatarImg from '../../../_common/user/user-avatar/img/img.vue';
+import { User } from '../../../_common/user/user.model';
 import {
 	ChatClient,
 	ChatKey,
@@ -26,14 +32,26 @@ import AppChatWindowOutput from '../../components/chat/window/output/output.vue'
 import AppChatWindowSend from '../../components/chat/window/send/send.vue';
 import { EVENT_UPDATE, FiresideChannel } from '../../components/grid/fireside-channel';
 import { store, Store } from '../../store';
+import { FiresideRTC, FiresideRTCKey } from './fireside-rtc';
 import AppFiresideChatMembers from './_chat-members/chat-members.vue';
 import { FiresideChatMembersModal } from './_chat-members/modal/modal.service';
+import AppFiresideDesktopAudio from './_desktop_audio/desktop-audio.vue';
 import { FiresideEditModal } from './_edit-modal/edit-modal.service';
+import AppFiresideHostAvatar from './_host-avatar/host-avatar.vue';
+import AppFiresideHostList from './_host-list/host-list.vue';
 import { FiresideStatsModal } from './_stats/modal/modal.service';
 import AppFiresideStats from './_stats/stats.vue';
+import AppFiresideVideoStats from './_video-stats/video-stats.vue';
+import AppFiresideVideo from './_video/video.vue';
 
 type RoutePayload = {
 	fireside: any;
+	streamingAppId: string;
+	videoChannelName: string;
+	videoToken: string | null;
+	audioChatChannelName: string;
+	audioChatToken: string | null;
+	hosts: any[];
 	metaDescription: string;
 	fb: any;
 	twitter: any;
@@ -62,9 +80,18 @@ const FiresideThemeKey = 'fireside';
 		AppAuthJoin,
 		AppFiresideChatMembers,
 		AppFiresideStats,
+		AppCommunityThumbnailImg,
+		AppResponsiveDimensions,
+		AppFiresideVideo,
+		AppFiresideVideoStats,
+		AppFiresideHostAvatar,
+		AppScrollScroller,
+		AppFiresideHostList,
+		AppFiresideDesktopAudio,
 	},
 	directives: {
 		AppTooltip,
+		AppObserveDimensions,
 	},
 })
 @RouteResolver({
@@ -76,6 +103,7 @@ export default class RouteFireside extends BaseRouteComponent {
 	@AppState user!: AppStore['user'];
 	@State grid!: Store['grid'];
 	@InjectReactive(ChatKey) chat!: ChatClient;
+	@ProvideReactive(FiresideRTCKey) rtc: FiresideRTC | null = null;
 
 	private fireside: Fireside | null = null;
 	private gridChannel: FiresideChannel | null = null;
@@ -87,6 +115,13 @@ export default class RouteFireside extends BaseRouteComponent {
 	hasExpiryWarning = false; // Visually shows a warning to the owner when the fireside's time is running low.
 
 	readonly Screen = Screen;
+
+	videoWidth = 0;
+	videoHeight = 0;
+
+	$refs!: {
+		videoWrapper: HTMLDivElement;
+	};
 
 	get routeTitle() {
 		if (!this.fireside) {
@@ -123,16 +158,54 @@ export default class RouteFireside extends BaseRouteComponent {
 		return this.chat.roomMembers[this.chatRoom.id];
 	}
 
+	get isStreaming() {
+		return this.fireside instanceof Fireside && this.fireside.is_streaming;
+	}
+
+	get shouldPlayVideo() {
+		return (
+			this.rtc &&
+			this.rtc.focusedUser &&
+			this.rtc.focusedUser.hasVideo &&
+			this.rtc.videoClient &&
+			this.rtc.videoClient.connectionState === 'CONNECTED'
+		);
+	}
+
+	get shouldPlayDesktopAudio() {
+		return (
+			this.rtc &&
+			this.rtc.focusedUser &&
+			this.rtc.focusedUser.hasDesktopAudio &&
+			this.rtc.videoClient &&
+			this.rtc.videoClient.connectionState === 'CONNECTED'
+		);
+	}
+
 	get shouldShowChat() {
-		return !!this.chat && this.chat.connected && !!this.chatRoom;
+		const mobileCondition = Screen.isMobile && !this.isVertical ? false : true;
+
+		return !!this.chat && this.chat.connected && !!this.chatRoom && mobileCondition;
 	}
 
 	get shouldShowChatMembers() {
-		return this.shouldShowChat && Screen.isLg;
+		return !this.isStreaming && this.shouldShowChat && Screen.isLg;
+	}
+
+	get shouldShowHosts() {
+		return !this.isVertical && !this.isSmall;
+	}
+
+	get isVertical() {
+		return Screen.height > Screen.width;
+	}
+
+	get isSmall() {
+		return !(Screen.isLg || Screen.isMd);
 	}
 
 	get shouldShowFiresideStats() {
-		return this.status === 'joined' && (Screen.isLg || Screen.isMd);
+		return !this.isStreaming && this.status === 'joined' && !this.isSmall;
 	}
 
 	get shouldShowEditControlButton() {
@@ -169,6 +242,8 @@ export default class RouteFireside extends BaseRouteComponent {
 		this.setPageTheme();
 
 		const userCanJoin = await this.checkUserCanJoin();
+		console.log(userCanJoin);
+
 		if (!userCanJoin) {
 			this.status = 'unauthorized';
 			console.debug(
@@ -185,8 +260,8 @@ export default class RouteFireside extends BaseRouteComponent {
 
 		if (this.fireside.isOpen()) {
 			// Set up watchers to initiate connection once one of them boots up.
-			this.$watch('chat.connected', this.watchChat.bind(this));
-			this.$watch('grid.connected', this.watchGrid.bind(this));
+			this.$watch('chat.connected', () => this.watchChat());
+			this.$watch('grid.connected', () => this.watchGrid());
 
 			// Both services may already be connected (watchers wouldn't fire), so try joining manually now.
 			this.tryJoin();
@@ -198,6 +273,7 @@ export default class RouteFireside extends BaseRouteComponent {
 
 	routeDestroyed() {
 		store.commit('theme/clearPageTheme', FiresideThemeKey);
+
 		this.disconnect();
 
 		// This also happens in Disconnect, but make 100% sure we cleared the interval.
@@ -220,6 +296,34 @@ export default class RouteFireside extends BaseRouteComponent {
 			}
 
 			this.join();
+		}
+	}
+
+	onDimensionsChange() {
+		const videoWrapper = this.$refs.videoWrapper;
+		if (!videoWrapper) {
+			return;
+		}
+
+		const wrapperWidth = videoWrapper.offsetWidth;
+		const wrapperHeight = videoWrapper.offsetHeight;
+		const wrapperRatio = wrapperWidth / wrapperHeight;
+
+		const videoStats = this.rtc?.videoClient?.getRemoteVideoStats();
+		const receiveWidth = videoStats?.receiveResolutionWidth?.receiveResolutionWidth ?? 16;
+		const receiveHeight = videoStats?.receiveResolutionHeight?.receiveResolutionHeight ?? 9;
+		const receiveRatio = receiveWidth / receiveHeight;
+
+		// If the video is wider than the containing element...
+		if (receiveRatio > wrapperRatio) {
+			this.videoWidth = wrapperWidth;
+			this.videoHeight = wrapperWidth / receiveRatio;
+		} else if (receiveRatio < wrapperRatio) {
+			this.videoHeight = wrapperHeight;
+			this.videoWidth = wrapperHeight * receiveRatio;
+		} else {
+			this.videoWidth = wrapperWidth;
+			this.videoHeight = wrapperHeight;
 		}
 	}
 
@@ -252,7 +356,7 @@ export default class RouteFireside extends BaseRouteComponent {
 	}
 
 	private setPageTheme() {
-		const theme = this.fireside?.user?.theme ?? null;
+		const theme = this.fireside?.community?.theme ?? this.fireside?.user?.theme ?? null;
 		store.commit('theme/setPageTheme', { key: FiresideThemeKey, theme });
 	}
 
@@ -262,6 +366,8 @@ export default class RouteFireside extends BaseRouteComponent {
 		}
 
 		const frontendCookie = await getCookie('frontend');
+		console.warn('cookie', frontendCookie);
+
 		if (!frontendCookie) {
 			return false;
 		}
@@ -334,6 +440,18 @@ export default class RouteFireside extends BaseRouteComponent {
 			return;
 		}
 
+		// --- Make them join the Fireside (if they aren't already).
+
+		if (!this.fireside.role) {
+			const rolePayload = await Api.sendRequest(`/web/fireside/join/${this.fireside.hash}`);
+			if (!rolePayload || !rolePayload.success || !rolePayload.role) {
+				console.debug(`[FIRESIDE] Failed to acquire a role.`);
+				this.status = 'setup-failed';
+				return;
+			}
+			this.fireside.role = new FiresideRole(rolePayload.role);
+		}
+
 		// --- Join Grid channel.
 
 		const channel = new FiresideChannel(
@@ -343,14 +461,8 @@ export default class RouteFireside extends BaseRouteComponent {
 			frontendCookie
 		);
 
-		channel.on(EVENT_UPDATE, (payload: any) => {
-			if (!this.fireside || !payload.fireside) {
-				return;
-			}
-
-			this.fireside.assign(payload.fireside);
-			this.expiryCheck();
-		});
+		// Subscribe to the update event.
+		channel.on(EVENT_UPDATE, this.onGridUpdateFireside.bind(this));
 
 		try {
 			await new Promise<void>((resolve, reject) => {
@@ -400,6 +512,14 @@ export default class RouteFireside extends BaseRouteComponent {
 			}
 		});
 
+		// Now join the RTC.
+		if (this.fireside.is_streaming) {
+			const streamingPayload = await Api.sendRequest(
+				`/web/fireside/fetch-streaming-info/${this.fireside.hash}`
+			);
+			this.createOrUpdateRtc(streamingPayload, false);
+		}
+
 		this.status = 'joined';
 		console.debug(`[FIRESIDE] Successfully joined Fireside.`);
 
@@ -430,6 +550,8 @@ export default class RouteFireside extends BaseRouteComponent {
 
 		this.chatChannel = null;
 
+		this.destroyRtc();
+
 		this.clearExpiryCheck();
 
 		console.debug(`[FIRESIDE] Disconnected from Fireside.`);
@@ -456,6 +578,37 @@ export default class RouteFireside extends BaseRouteComponent {
 		this.hasExpiryWarning = this.fireside.getExpiryInMs() < 60_000;
 	}
 
+	private createOrUpdateRtc(payload: any, checkJoined = true) {
+		if (!this.fireside || (checkJoined && this.status !== 'joined')) {
+			return;
+		}
+
+		const hosts = User.populate(payload.hosts ?? []);
+
+		if (this.rtc === null) {
+			this.rtc = new FiresideRTC(
+				payload.streamingAppId,
+				payload.videoChannelName,
+				payload.videoToken,
+				payload.audioChatChannelName,
+				payload.audioChatToken,
+				hosts
+			);
+		} else {
+			// TODO: update hosts when we introduce changing hosts on the fly.
+			this.rtc.renewToken(payload.videoToken, payload.audioChatToken);
+		}
+	}
+
+	private destroyRtc() {
+		if (!this.rtc) {
+			return;
+		}
+
+		this.rtc.destroy();
+		this.rtc = null;
+	}
+
 	onClickRetry() {
 		this.disconnect();
 		this.tryJoin();
@@ -480,5 +633,20 @@ export default class RouteFireside extends BaseRouteComponent {
 			return;
 		}
 		FiresideEditModal.show(this.fireside);
+	}
+
+	onGridUpdateFireside(payload: any) {
+		if (!this.fireside || !payload.fireside) {
+			return;
+		}
+
+		this.fireside.assign(payload.fireside);
+		this.expiryCheck();
+
+		if (this.fireside.is_streaming && payload.streaming_info) {
+			this.createOrUpdateRtc(payload.streaming_info);
+		} else {
+			this.destroyRtc();
+		}
 	}
 }

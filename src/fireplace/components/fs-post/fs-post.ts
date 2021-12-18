@@ -73,14 +73,18 @@ export default class AppHomeFsPost extends Vue {
 
 		this.crossfadeIn();
 
-		this.$watch(
-			() => this.transitioning,
-			() => {
-				if (this.transitioning) {
-					this.crossfadeOut();
+		// Super hacky, but we don't want the immediate transitioning change to
+		// crossfade us out.
+		setTimeout(() => {
+			this.$watch(
+				() => this.transitioning,
+				() => {
+					if (this.transitioning) {
+						this.crossfadeOut();
+					}
 				}
-			}
-		);
+			);
+		}, 1000);
 	}
 
 	async crossfadeIn() {

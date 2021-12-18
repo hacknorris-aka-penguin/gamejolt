@@ -57,6 +57,9 @@ const config = {
 		gameserver: {
 			title: 'Playing Game - Game Jolt',
 		},
+		fireplace: {
+			title: 'Game Jolt Fireplace',
+		},
 		client: {
 			title: 'Game Jolt',
 			client: true,
